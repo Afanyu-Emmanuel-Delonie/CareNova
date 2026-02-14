@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'labs',
-    'consultations',
+    ''
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

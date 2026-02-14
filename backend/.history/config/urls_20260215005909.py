@@ -20,7 +20,8 @@ urlpatterns = [
     
     # lab result 
     path("api/lab/", include("labs.urls")),
-    path("api/consultations/", include("consultations.urls")),
+    
+    
     
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
