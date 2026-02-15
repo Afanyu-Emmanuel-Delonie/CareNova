@@ -22,7 +22,7 @@ urlpatterns = [
     path("api/lab/", include("labs.urls")),
     path("api/consultations/", include("consultations.urls")),
     path("api/pharmacy/", include("pharmacy.urls")),
-    path("api/orders/", include("orders.urls")),
+    path("api/pharmacy/", include("pharmacy.urls")),
     
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

@@ -50,8 +50,7 @@ INSTALLED_APPS = [
     'accounts',
     'labs',
     'consultations',
-    'pharmacy',
-    'orders',
+    'phama'
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
