@@ -1,0 +1,333 @@
+# CareNova Backend API 🏥
+
+<div align="center">
+
+![Python Version](https://img.shields.io/badge/python-3.13+-blue.svg)
+![Django Version](https://img.shields.io/badge/django-5.x-green.svg)
+![DRF](https://img.shields.io/badge/DRF-3.x-red.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
+**A robust, role-based healthcare and pharmaceutical management system**
+
+[Features](#-key-features) •
+[Installation](#️-setup--installation) •
+[API Docs](#-api-documentation) •
+[Testing](#-testing) •
+[Security](#-security-architecture)
+
+</div>
+
+---
+
+## 📋 Overview
+
+CareNova is a comprehensive healthcare management platform that bridges the gap between medical diagnostics and medicine procurement through a secure, automated workflow. Built with Django and Django REST Framework, it provides a complete solution for managing patient records, laboratory results, medical consultations, and pharmaceutical operations.
+
+## 🚀 Key Features
+
+### Authentication & Authorization
+- **Custom Identity Management**: Email-based authentication system
+- **OTP Verification**: Secure 6-digit OTP for account verification
+- **Role-Based Access Control (RBAC)**: Dedicated profiles and permissions for:
+  - 👨‍⚕️ Doctors
+  - 👤 Patients
+  - 🔬 Lab Technicians
+  - 💊 Pharmacy Staff
+
+### Medical Workflow
+- **Laboratory Management**
+  - Digital lab result uploads
+  - Result tracking and history
+  - Role-based access to lab reports
+  
+- **Consultation System**
+  - Diagnosis recording
+  - Digital prescription issuance
+  - Patient-Doctor interaction tracking
+
+### Pharmacy Integration
+- **Medication Catalog**: Comprehensive drug database with categorization
+- **Inventory Tracking**: Real-time stock management
+- **Smart Order Validation**: Automated prescription verification for controlled medications
+- **Prescription Gate**: Logic-gate system preventing unauthorized purchase of restricted medications
+
+### Developer Experience
+- **Auto-generated API Documentation**: OpenAPI 3.0 specification
+- **Interactive API Explorer**: Swagger UI and Redoc interfaces
+- **Comprehensive Test Suite**: Integration tests covering the complete workflow
+
+## 🛠 Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| **Framework** | Django 5.x |
+| **API Framework** | Django REST Framework (DRF) |
+| **Language** | Python 3.13+ |
+| **Database** | SQLite (Development) / PostgreSQL (Production) |
+| **Documentation** | drf-spectacular (OpenAPI 3.0) |
+| **Authentication** | Custom AbstractBaseUser implementation |
+| **Validation** | Regex Validators, OTP Lifecycle management |
+
+## 📂 Project Structure
+
+```
+backend/
+├── accounts/          # User models, OTP system, User profiles
+│   ├── models.py      # Custom User, OTP, Doctor/Patient/Staff profiles
+│   ├── serializers.py # Authentication & profile serializers
+│   └── views.py       # Registration, login, OTP verification
+│
+├── labs/              # Laboratory management
+│   ├── models.py      # Lab results and tracking
+│   └── views.py       # Lab result upload and retrieval
+│
+├── consultations/     # Medical consultations
+│   ├── models.py      # Diagnoses and Prescriptions
+│   └── views.py       # Consultation and prescription logic
+│
+├── pharmacy/          # Pharmaceutical inventory
+│   ├── models.py      # Medication catalog and categories
+│   └── views.py       # Medication management
+│
+├── orders/            # Order processing
+│   ├── models.py      # Order and OrderItem models
+│   └── views.py       # Checkout logic with prescription validation
+│
+├── config/            # Project configuration
+│   ├── settings.py    # Django settings
+│   ├── urls.py        # Main URL routing
+│   └── wsgi.py        # WSGI configuration
+│
+└── manage.py          # Django management script
+```
+
+## ⚙️ Setup & Installation
+
+### Prerequisites
+- Python 3.13 or higher
+- pip (Python package manager)
+- Git
+
+### Installation Steps
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Afanyu-Emmanuel-Delonie/CareNova.git
+   cd CareNova
+   ```
+
+2. **Create and activate a virtual environment**
+   ```bash
+   # On macOS/Linux
+   python -m venv venv
+   source venv/bin/activate
+   
+   # On Windows
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure environment variables** (Optional)
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+5. **Apply database migrations**
+   ```bash
+   python manage.py makemigrations
+   python manage.py migrate
+   ```
+
+6. **Create a superuser** (Optional)
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+7. **Run the development server**
+   ```bash
+   python manage.py runserver
+   ```
+
+The API will be available at `http://127.0.0.1:8000/`
+
+## 📖 API Documentation
+
+Once the server is running, access the interactive API documentation:
+
+- **Swagger UI**: [http://127.0.0.1:8000/api/schema/swagger-ui/](http://127.0.0.1:8000/api/schema/swagger-ui/)
+- **Redoc**: [http://127.0.0.1:8000/api/schema/redoc/](http://127.0.0.1:8000/api/schema/redoc/)
+- **OpenAPI Schema**: [http://127.0.0.1:8000/api/schema/](http://127.0.0.1:8000/api/schema/)
+
+### Key API Endpoints
+
+#### Authentication
+```
+POST   /api/accounts/register/          # User registration
+POST   /api/accounts/verify-otp/        # OTP verification
+POST   /api/accounts/login/             # User login
+POST   /api/accounts/resend-otp/        # Resend OTP
+```
+
+#### Profiles
+```
+GET    /api/accounts/profile/           # Get user profile
+PUT    /api/accounts/profile/           # Update profile
+```
+
+#### Laboratory
+```
+GET    /api/labs/results/               # List lab results
+POST   /api/labs/results/               # Upload lab result
+GET    /api/labs/results/{id}/          # Retrieve specific result
+```
+
+#### Consultations
+```
+GET    /api/consultations/              # List consultations
+POST   /api/consultations/              # Create consultation
+GET    /api/consultations/{id}/         # Retrieve consultation
+POST   /api/consultations/{id}/prescribe/ # Issue prescription
+```
+
+#### Pharmacy
+```
+GET    /api/pharmacy/medications/       # List medications
+GET    /api/pharmacy/medications/{id}/  # Medication details
+GET    /api/pharmacy/categories/        # Medication categories
+```
+
+#### Orders
+```
+POST   /api/orders/checkout/            # Create order (with prescription validation)
+GET    /api/orders/                     # List user orders
+GET    /api/orders/{id}/                # Order details
+```
+
+## 🧪 Testing
+
+The project includes a comprehensive integration test suite that verifies the complete workflow from user registration to medication purchase.
+
+### Run all tests
+```bash
+python manage.py test
+```
+
+### Run tests for a specific app
+```bash
+python manage.py test accounts
+python manage.py test consultations
+python manage.py test orders
+```
+
+### Run tests with coverage
+```bash
+coverage run --source='.' manage.py test
+coverage report
+coverage html  # Generate HTML coverage report
+```
+
+## 🔒 Security Architecture
+
+CareNova implements multiple layers of security and validation:
+
+### Prescription Validation Gate
+- Products marked with `requires_prescription=True` undergo automatic verification
+- System checks the `Consultations` app for matching diagnosis before allowing checkout
+- Prevents unauthorized purchase of controlled medications
+
+### Data Isolation & Access Control
+- **Doctors**: Can only view labs assigned to them
+- **Patients**: Can only access their own medical history and records
+- **Lab Technicians**: Restricted access to laboratory-related operations
+- Role-based permissions enforced at the database and API level
+
+### Authentication Security
+- **OTP Verification**: New accounts remain `is_verified=False` until OTP validation
+- **Email-based Authentication**: Secure email-password combination
+- **Custom User Model**: AbstractBaseUser implementation for enhanced security
+- **Token-based Sessions**: Secure API authentication
+
+### Input Validation
+- Regex validators for email, phone numbers, and other sensitive fields
+- Prescription number format validation
+- OTP lifecycle management (expiration, single-use)
+
+## 🚀 Deployment
+
+### Production Checklist
+
+- [ ] Set `DEBUG = False` in settings
+- [ ] Configure `ALLOWED_HOSTS`
+- [ ] Use PostgreSQL instead of SQLite
+- [ ] Set strong `SECRET_KEY`
+- [ ] Configure CORS settings
+- [ ] Set up static file serving
+- [ ] Configure email backend for OTP delivery
+- [ ] Enable HTTPS
+- [ ] Set up logging and monitoring
+- [ ] Configure database backups
+
+### Environment Variables
+
+Create a `.env` file with the following variables:
+
+```env
+SECRET_KEY=your-secret-key
+DEBUG=False
+ALLOWED_HOSTS=your-domain.com
+DATABASE_URL=postgresql://user:password@localhost/dbname
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-password
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+### Coding Standards
+- Follow PEP 8 style guide
+- Write descriptive commit messages
+- Add tests for new features
+- Update documentation as needed
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 Authors
+
+- **Afanyu Emmanuel Delonie** - *Initial work* - [GitHub](https://github.com/Afanyu-Emmanuel-Delonie)
+
+## 🙏 Acknowledgments
+
+- Django and DRF communities
+- Contributors and testers
+- Healthcare professionals who provided domain expertise
+
+## 📞 Support
+
+For support, email afanyuemma2002@gmail.com.com or open an issue in the GitHub repository.
+
+---
+
+<div align="center">
+
+**Built  for better healthcare management**
+
+[⬆ Back to Top](#carenova-backend-api-)
+
+</div>
