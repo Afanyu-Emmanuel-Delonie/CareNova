@@ -68,4 +68,31 @@ class ProfileSerializer(serializers.ModelSerializer):
             PatientProfile.objects.filter(profile=instance).update(**patient_data)
             
         return instance
- 
+
+
+class AdminUserManagementSerializer(serializers.ModelSerializer):
+    # Pulling name from the related profile
+    full_name = serializers.SerializerMethodField()
+    # Pulling specific role data status
+    role_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'role', 'full_name', 
+            'is_active', 'is_verified', 'is_flagged', 
+            'ban_reason', 'last_login', 'role_details'
+        ]
+
+    def get_full_name(self, obj):
+        if hasattr(obj, 'profile'):
+            return f"{obj.profile.first_name} {obj.profile.last_name}"
+        return "N/A"
+
+    def get_role_details(self, obj):
+        """Returns extra info like specialization for doctors or blood group for patients"""
+        if obj.role == User.Roles.DOCTOR and hasattr(obj.profile, 'doctor_data'):
+            return {"specialization": obj.profile.doctor_data.specialization}
+        if obj.role == User.Roles.PATIENT and hasattr(obj.profile, 'patient_data'):
+            return {"blood_group": obj.profile.patient_data.blood_group}
+        return None
