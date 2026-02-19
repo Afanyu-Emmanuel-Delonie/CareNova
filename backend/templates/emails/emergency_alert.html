@@ -1,0 +1,20 @@
+<html>
+<body style="font-family: 'Segoe UI', sans-serif; color: #333;">
+    <div style="max-width: 600px; margin: auto; padding: 20px; border: 2px solid #e74c3c; border-radius: 10px;">
+        <h2 style="color: #c0392b;">⚠️ URGENT: Emergency Appointment</h2>
+        <p>Hello Dr. <strong>{{ doctor_name }}</strong>,</p>
+        <p>A patient has requested an urgent emergency consultation:</p>
+        
+        <ul style="list-style: none; padding: 0;">
+            <li><strong>Patient:</strong> {{ patient_name }}</li>
+            <li><strong>Reason:</strong> {{ reason }}</li>
+            <li><strong>Requested Time:</strong> {{ time }}</li>
+        </ul>
+
+        <p>Please log in to your dashboard immediately to review the patient's records and prepare for the session.</p>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="https://carenova.com/dashboard" style="background: #e74c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

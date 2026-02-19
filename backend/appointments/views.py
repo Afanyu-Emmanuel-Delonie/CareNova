@@ -843,7 +843,14 @@ class PatientHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        patient = self.request.user.users.patient_data
+        if getattr(self, 'swagger_fake_view', False):
+            return Appointment.objects.none()
+
+        user = self.request.user
+        if not user.is_authenticated or user.role != 'PATIENT':
+            return Appointment.objects.none()
+
+        patient = user.profile.patient_data
         return Appointment.objects.filter(
             patient=patient,
             status='COMPLETED'
