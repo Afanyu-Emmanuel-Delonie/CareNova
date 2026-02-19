@@ -146,4 +146,3 @@ class AppointmentNotifications:
             'time': "ASAP",
         }
         send_emergency_alert_task.delay(doctor_profile.user.email, context)
-        
