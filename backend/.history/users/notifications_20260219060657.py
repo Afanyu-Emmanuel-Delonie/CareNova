@@ -1,0 +1,17 @@
+# apps/appointments/notifications.py
+from core.emails import BaseEmailSender
+
+class AppointmentNotifications:
+    @staticmethod
+    def send_confirmation(appointment):
+        context = {
+            'patient_name': appointment.patient.profile.get_full_name(),
+            'doctor_name': appointment.doctor.profile.get_full_name(),
+            'date': appointment.appointment_date,
+        }
+        BaseEmailSender.send(
+            "Appointment Confirmed", 
+            appointment.patient.profile.user.email, 
+            context, 
+            'appointment_confirmed'
+        )

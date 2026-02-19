@@ -1,0 +1,8 @@
+from rest_framework import permissions
+
+class IsDoctor(permissions.BasePermission):
+    def has_permission(self, request, view):
+       if not request.user or not request.user.is_authenticated:
+           return False
+       user_role = getattr(request.user, 'role', None)
+       return user_role == 'DOC'

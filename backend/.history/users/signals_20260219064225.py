@@ -1,0 +1,17 @@
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.conf import settings
+from .models import Profile, DoctorProfile, PatientProfile
+from appointments.models import Appointment
+from .notifications import AppointmentNotifications
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        profile = Profile.objects.create(user=instance)
+        
+        if instance.role == 'DOCTOR':
+            DoctorProfile.objects.create(profile=profile)
+        elif instance.role == 'PATIENT':
+            PatientProfile.objects.create(profile=profile)
+            
