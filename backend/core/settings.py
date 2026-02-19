@@ -36,7 +36,7 @@ INSTALLED_APPS = [
 
     # Local Apps
     'users.apps.UsersConfig',
-    'appointments',
+    'appointments.apps.AppointmentsConfig',
 ]
 
 MIDDLEWARE = [

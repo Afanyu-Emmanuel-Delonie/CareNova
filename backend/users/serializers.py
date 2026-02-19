@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User, Profile, DoctorProfile, PatientProfile
+from appointments.serializers import AppointmentSerializer
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -31,10 +32,35 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField(read_only=True)
+    average_rating = serializers.FloatField(read_only=True)
+    total_appointments = serializers.SerializerMethodField()
+    emergency_count = serializers.SerializerMethodField()
+    pending_count = serializers.SerializerMethodField()
+    appointments = AppointmentSerializer(many=True, read_only=True, source='doctor_appointments')
+
     class Meta:
         model = DoctorProfile
-        fields = ['specialization', 'license_number', 'bio', 'is_verified']
+        fields = [
+            'id', 'full_name', 'specialization', 'license_number', 'bio', 'is_verified',
+            'average_rating', 'total_appointments', 'emergency_count', 'pending_count', 'appointments'
+        ]
         read_only_fields = ['is_verified']
+
+    def get_full_name(self, obj):
+        profile = getattr(obj, 'profile', None)
+        if not profile:
+            return None
+        return f"{profile.first_name} {profile.last_name}".strip()
+
+    def get_total_appointments(self, obj):
+        return obj.doctor_appointments.count()
+
+    def get_emergency_count(self, obj):
+        return obj.doctor_appointments.filter(is_emergency=True, status='PENDING').count()
+
+    def get_pending_count(self, obj):
+        return obj.doctor_appointments.filter(status='PENDING').count()
         
 class PatientProfileSerializer(serializers.ModelSerializer):
     class Meta:

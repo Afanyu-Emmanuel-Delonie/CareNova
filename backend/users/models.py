@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Avg
 import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.conf import settings
@@ -61,6 +62,11 @@ class DoctorProfile(models.Model):
     license_number = models.CharField(max_length=50, unique=True)
     bio = models.TextField(blank=True)
     is_verified = models.BooleanField(default=False)
+
+    @property
+    def average_rating(self):
+        avg_value = self.reviews.aggregate(avg=Avg('rating'))['avg']
+        return avg_value or 0
     
     def __str__(self):
         return f"Dr. {self.profile.last_name}| {self.specialization}"
