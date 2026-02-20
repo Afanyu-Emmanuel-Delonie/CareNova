@@ -2,7 +2,6 @@ from pathlib import Path
 from datetime import timedelta
 import environ
 import os
-from celery import Celery
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # Must be defined BEFORE environ.Env.read_env() which references it.
@@ -10,12 +9,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'carenova.settings')
-app = Celery('carenova')
-app.config_from_object('django.conf:settings', namespace='CELERY')
-app.autodiscover_tasks()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -169,3 +162,5 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '172.19.176.1', '*'] 
+CORS_ALLOW_ALL_ORIGINS = True 

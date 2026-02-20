@@ -40,7 +40,7 @@ class RegisterView(APIView):
             user = serializer.save()
 
             otp_code = user.generate_otp()
-            success = AuthNotifications.send_otp_email_task.delay(user.email, otp_code)
+            success = AuthNotifications.send_otp_email(user, otp_code)
 
             if success:
                 return Response({
