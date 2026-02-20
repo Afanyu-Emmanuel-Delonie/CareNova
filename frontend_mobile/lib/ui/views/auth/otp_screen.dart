@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../provider/auth/auth_provider.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -27,9 +29,66 @@ class _OtpScreenState extends State<OtpScreen> {
 
   String get _otp => _controllers.map((c) => c.text).join();
 
-  void _onVerify() {
-    if (_otp.length == 6) {
-      // TODO: hook into AuthProvider / AuthService
+  void _onVerify() async {
+    if (_otp.length < 6) return;
+
+    final auth = context.read<AuthProvider>();
+    // Always pass widget.email as fallback so verification works even if
+    // the provider's internal _email was lost (hot reload, direct navigation, etc.)
+    final success = await auth.verifyOtp(_otp, fallbackEmail: widget.email);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Text(
+                'Email verified! Please log in.',
+                style: GoogleFonts.inter(color: Colors.white),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  auth.errorMessage ?? 'Invalid OTP. Please try again.',
+                  style: GoogleFonts.inter(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      for (final c in _controllers) c.clear();
+      _focusNodes[0].requestFocus();
     }
   }
 
@@ -92,17 +151,19 @@ class _OtpScreenState extends State<OtpScreen> {
 
               const SizedBox(height: 48),
 
-              // OTP Boxes
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(6, (index) => _OtpBox(
-                    controller: _controllers[index],
-                    focusNode: _focusNodes[index],
-                    isDarkMode: isDarkMode,
-                    onChanged: (value) => _onChanged(value, index),
-                  )),
+                  children: List.generate(
+                    6,
+                        (index) => _OtpBox(
+                      controller: _controllers[index],
+                      focusNode: _focusNodes[index],
+                      isDarkMode: isDarkMode,
+                      onChanged: (value) => _onChanged(value, index),
+                    ),
+                  ),
                 ),
               ),
 
@@ -110,23 +171,37 @@ class _OtpScreenState extends State<OtpScreen> {
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: ElevatedButton(
-                  onPressed: _onVerify,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.indigoPrimary,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 52),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Verify',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                child: Consumer<AuthProvider>(
+                  builder: (context, auth, _) {
+                    return ElevatedButton(
+                      onPressed: auth.isLoading ? null : _onVerify,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.indigoPrimary,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: AppColors.indigoPrimary.withOpacity(0.6),
+                        minimumSize: const Size(double.infinity, 52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: auth.isLoading
+                          ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                          : Text(
+                        'Verify',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
 
@@ -140,8 +215,21 @@ class _OtpScreenState extends State<OtpScreen> {
                     style: GoogleFonts.inter(color: textSecondary),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      // TODO: resend OTP
+                    onTap: () async {
+                      final auth = context.read<AuthProvider>();
+                      await auth.requestOtp(widget.email);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('OTP resent to ${widget.email}'),
+                          backgroundColor: Colors.green.shade600,
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.all(16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      );
                     },
                     child: Text(
                       'Resend',

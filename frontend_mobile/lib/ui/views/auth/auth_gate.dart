@@ -18,6 +18,9 @@ class _AuthGateState extends State<AuthGate> {
 
   void _toggleView() => setState(() => _showLogin = !_showLogin);
 
+  // Called by RegisterScreen before pushing OTP, so when user pops back we show Login
+  void _switchToLogin() => setState(() => _showLogin = true);
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -34,6 +37,9 @@ class _AuthGateState extends State<AuthGate> {
 
     return _showLogin
         ? LoginScreen(onRegisterTap: _toggleView)
-        : RegisterScreen(onLoginTap: _toggleView);
+        : RegisterScreen(
+      onLoginTap: _toggleView,
+      onRegistered: _switchToLogin,
+    );
   }
 }

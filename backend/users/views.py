@@ -75,8 +75,9 @@ class VerifyOTPView(APIView):
             try:
                 user = User.objects.get(email=email)
                 if user.verify_otp(otp_received):
+                    user.is_verified = True
                     user.is_active = True
-                    user.save()
+                    user.save(update_fields=["is_verified", "is_active"])
                     return Response({"message": "Account activated successfully!"}, status=200)
                 else:
                     return Response({"error": "Invalid or expired OTP."}, status=400)

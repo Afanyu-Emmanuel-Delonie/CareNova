@@ -10,7 +10,12 @@ import 'otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   final VoidCallback onLoginTap;
-  const RegisterScreen({super.key, required this.onLoginTap});
+  final VoidCallback onRegistered; // ← new
+  const RegisterScreen({
+    super.key,
+    required this.onLoginTap,
+    required this.onRegistered,
+  });
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -32,30 +37,78 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // Registration Logic
   Future<void> _onSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final auth = context.read<AuthProvider>();
+    final email = _emailController.text.trim();
 
     final success = await auth.register(
       name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
+      email: email,
       password: _passwordController.text.trim(),
     );
 
+    if (!mounted) return;
+
     if (success) {
+      _nameController.clear();
+      _emailController.clear();
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Text(
+                'Account created! Please verify your email.',
+                style: GoogleFonts.inter(color: Colors.white),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+
+
+      widget.onRegistered();
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OtpScreen(email: _emailController.text.trim()),
+          builder: (context) => OtpScreen(email: email),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(auth.errorMessage ?? 'Registration failed'),
-          backgroundColor: AppColors.error,
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  auth.errorMessage ?? 'Registration failed. Please try again.',
+                  style: GoogleFonts.inter(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -112,7 +165,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-
                       _label('Full Name', isDarkMode),
                       const SizedBox(height: 8),
                       AppTextField(
@@ -163,24 +215,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const SizedBox(height: 32),
 
-                      // ✅ Button calls _onSubmit with registration logic
-                      ElevatedButton(
-                        onPressed: _onSubmit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.indigoPrimary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Create Account',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      Consumer<AuthProvider>(
+                        builder: (context, auth, _) {
+                          return ElevatedButton(
+                            onPressed: auth.isLoading ? null : _onSubmit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.indigoPrimary,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: AppColors.indigoPrimary.withOpacity(0.6),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: auth.isLoading
+                                ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                                : Text(
+                              'Create Account',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 24),
@@ -196,7 +261,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   : AppColors.lightTextSecondary,
                             ),
                           ),
-                          // ✅ Login tap just toggles back via AuthGate
                           GestureDetector(
                             onTap: widget.onLoginTap,
                             child: Text(
