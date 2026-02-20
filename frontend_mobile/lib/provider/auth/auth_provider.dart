@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mobile/data/services/auth_service.dart';
+import 'package:dio/dio.dart';
+
+import '../../data/model/user_profile.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -9,21 +12,40 @@ class AuthProvider extends ChangeNotifier {
   bool _isInitializing = true;
   String? _errorMessage;
   String? _email;
+  UserProfile? _profile;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
   bool get isInitializing => _isInitializing;
   String? get errorMessage => _errorMessage;
   String? get email => _email;
+  UserProfile? get profile => _profile;
 
-  // Called on app startup to check for existing token
+  // ─── Startup ──────────────────────────────────────────────────────
   Future<void> checkLoginStatus() async {
-    // TODO: use flutter_secure_storage to check for JWT token
-    await Future.delayed(const Duration(seconds: 1));
+    final hasToken = await _authService.hasValidToken();
+    if (hasToken) {
+      _isAuthenticated = true;
+      await fetchProfile();
+    }
     _isInitializing = false;
     notifyListeners();
   }
 
+  // ─── Fetch Profile ────────────────────────────────────────────────
+  Future<void> fetchProfile() async {
+    try {
+      final response = await _authService.getProfile();
+      if (response.statusCode == 200) {
+        _profile = UserProfile.fromJson(response.data);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('fetchProfile error: $e');
+    }
+  }
+
+  // ─── Register ─────────────────────────────────────────────────────
   Future<bool> register({
     required String name,
     required String email,
@@ -44,15 +66,104 @@ class AuthProvider extends ChangeNotifier {
         _setLoading(false);
         return true;
       }
+
+      _extractErrorMessage(response.data);
       _setLoading(false);
+      return false;
+    } on DioException catch (e) {
+      _setLoading(false);
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map) {
+          final firstKey = data.keys.first;
+          final messages = data[firstKey];
+          if (messages is List && messages.isNotEmpty) {
+            _errorMessage = messages.first.toString();
+          } else {
+            _errorMessage = messages.toString();
+          }
+        } else {
+          _errorMessage = data.toString();
+        }
+      } else {
+        _errorMessage = 'Registration failed. Please try again.';
+      }
+      notifyListeners();
       return false;
     } catch (e) {
       _setLoading(false);
-      _errorMessage = "Email already in use or server error.";
+      _errorMessage = 'Something went wrong. Please try again.';
+      notifyListeners();
       return false;
     }
   }
 
+  // ─── Login ────────────────────────────────────────────────────────
+  Future<bool> login({
+    required String email,
+    required String password,
+  }) async {
+    _setLoading(true);
+    _errorMessage = null;
+
+    try {
+      final response = await _authService.loginUser(
+        email: email,
+        password: password,
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final accessToken = data['access'] as String?;
+        final refreshToken = data['refresh'] as String?;
+
+        if (accessToken == null || refreshToken == null) {
+          _errorMessage = 'Login failed: tokens missing from response.';
+          _setLoading(false);
+          return false;
+        }
+
+        await _authService.saveTokens(
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        );
+
+        _isAuthenticated = true;
+        _setLoading(false);
+
+        await fetchProfile();
+        return true;
+      }
+
+      if (response.statusCode == 401) {
+        final data = response.data;
+        _errorMessage = (data is Map)
+            ? (data['detail'] ?? data['error'] ?? data['message'] ?? 'Invalid credentials.')
+            : 'Invalid email or password.';
+      } else {
+        _errorMessage = 'Login failed. Please try again.';
+      }
+
+      _setLoading(false);
+      return false;
+    } catch (e, stack) {
+      debugPrint('login error: $e\n$stack');
+      _setLoading(false);
+      _errorMessage = 'Something went wrong. Please try again.';
+      return false;
+    }
+  }
+
+  // ─── Logout ───────────────────────────────────────────────────────
+  Future<void> logout() async {
+    await _authService.clearTokens();
+    _isAuthenticated = false;
+    _profile = null;
+    _email = null;
+    notifyListeners();
+  }
+
+  // ─── OTP ──────────────────────────────────────────────────────────
   Future<void> requestOtp(String email) async {
     _setLoading(true);
     clearError();
@@ -63,37 +174,61 @@ class AuthProvider extends ChangeNotifier {
         _email = email;
       } else {
         _errorMessage = 'Failed to send OTP. Please try again.';
+        notifyListeners();
       }
     } catch (e) {
       _errorMessage = 'Something went wrong. Please try again.';
+      notifyListeners();
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<void> verifyOtp(String otp) async {
+  Future<bool> verifyOtp(String otp, {String? fallbackEmail}) async {
+    _email ??= fallbackEmail;
+
     if (_email == null) {
       _errorMessage = 'Email is missing. Please restart the process.';
       notifyListeners();
-      return;
+      return false;
     }
 
     _setLoading(true);
-    clearError();
+    _errorMessage = null;
 
     try {
       final response = await _authService.verifyOtp(_email!, otp);
+
       if (response.statusCode == 200) {
         _email = null;
-        _isAuthenticated = true;
-      } else {
-        _errorMessage = 'Invalid OTP. Please try again.';
+        _setLoading(false);
+        return true;
       }
-    } catch (e) {
-      _errorMessage = 'Something went wrong. Please try again.';
-    } finally {
+
+      _errorMessage = response.data?['error']
+          ?? response.data?['message']
+          ?? 'Invalid OTP. Please try again.';
       _setLoading(false);
+      return false;
+    } catch (e, stack) {
+      debugPrint('verifyOtp error: $e\n$stack');
+      _setLoading(false);
+      _errorMessage = 'Invalid or expired OTP. Please try again.';
+      return false;
     }
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────
+  void _extractErrorMessage(dynamic data) {
+    if (data is Map) {
+      _errorMessage = data['detail']
+          ?? data['error']
+          ?? data['message']
+          ?? 'Something went wrong.';
+    } else {
+      _errorMessage = 'Something went wrong.';
+    }
+    notifyListeners();
   }
 
   void setAuthenticated(bool value) {
@@ -106,7 +241,6 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Private — only used internally
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

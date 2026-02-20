@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/validators/auth_validators.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../provider/auth/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
-  final VoidCallback onRegisterTap; // ✅ Add this
+  final VoidCallback onRegisterTap;
   const LoginScreen({super.key, required this.onRegisterTap});
 
   @override
@@ -25,10 +27,43 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _onSubmit() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: hook into AuthProvider / AuthService
+  Future<void> _onSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final auth = context.read<AuthProvider>();
+
+    final success = await auth.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  auth.errorMessage ?? 'Login failed. Please try again.',
+                  style: GoogleFonts.inter(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
+    // On success: AuthGate watches isAuthenticated and automatically
+    // switches to DashboardScreen — no manual navigation needed.
   }
 
   @override
@@ -69,19 +104,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+                    color: isDarkMode
+                        ? AppColors.darkBackground
+                        : AppColors.lightBackground,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-
                         const SizedBox(height: 20),
 
                         Text(
@@ -133,7 +170,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              // TODO: implement forgot password
+                            },
                             child: Text(
                               'Forgot Password?',
                               style: GoogleFonts.inter(
@@ -148,23 +187,39 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const SizedBox(height: 24),
 
-                        ElevatedButton(
-                          onPressed: _onSubmit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.indigoPrimary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            'Login',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        Consumer<AuthProvider>(
+                          builder: (context, auth, _) {
+                            return ElevatedButton(
+                              onPressed: auth.isLoading ? null : _onSubmit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.indigoPrimary,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor:
+                                AppColors.indigoPrimary.withOpacity(0.6),
+                                padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: auth.isLoading
+                                  ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                                  : Text(
+                                'Login',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          },
                         ),
 
                         const SizedBox(height: 40),
@@ -194,7 +249,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
-
                       ],
                     ),
                   ),
