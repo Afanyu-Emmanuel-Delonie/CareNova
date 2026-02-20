@@ -4,14 +4,29 @@ from .models import User, Profile, DoctorProfile, PatientProfile
 from appointments.serializers import AppointmentSerializer
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(write_only=True, max_length=200)
     password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'role']
+        fields = ['name', 'email', 'password', 'role']
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Name is required.")
+        return value
     
-    def create(self, validate_data):
-        user = User.objects.create_user(**validate_data)
+    def create(self, validated_data):
+        name = validated_data.pop('name').strip()
+        first_name, _, last_name = name.partition(' ')
+
+        user = User.objects.create_user(**validated_data)
+        if hasattr(user, 'profile'):
+            user.profile.first_name = first_name
+            user.profile.last_name = last_name.strip()
+            user.profile.save(update_fields=['first_name', 'last_name'])
+
         return user
     
 class OTPVerificationSerializer(serializers.Serializer):
