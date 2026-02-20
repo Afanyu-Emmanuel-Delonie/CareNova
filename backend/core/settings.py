@@ -164,3 +164,9 @@ CELERY_TIMEZONE = 'UTC'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '172.19.176.1', '*'] 
 CORS_ALLOW_ALL_ORIGINS = True 
+
+# User-uploaded media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR
+
+
