@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_mobile/core/api/api_client.dart';
 
+import '../model/category_model.dart';
+
 class AuthService {
   final ApiClient _apiClient = ApiClient();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -73,5 +75,18 @@ class AuthService {
 
   Future<Response> getProfile() async {
     return await _apiClient.get('users/me/');
+  }
+
+  Future<List<Category>> getCategories() async {
+    try {
+      final response = await _apiClient.get('/users/categories/');
+      if (response.statusCode == 200) {
+        List data = response.data['results'];
+        return data.map((item) => Category.fromJson(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
   }
 }

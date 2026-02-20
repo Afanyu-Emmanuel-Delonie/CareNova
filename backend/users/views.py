@@ -12,10 +12,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
-from .models import User, Profile, DoctorProfile
+from .models import User, Profile, DoctorProfile, Category
 from .filters import DoctorFilter
 from .notifications import AuthNotifications
-from .serializers import UserRegistrationSerializer, OTPVerificationSerializer, CustomTokenObtainPairSerializer, ProfileSerializer, DoctorProfileSerializer, AdminUserManagementSerializer
+from .serializers import UserRegistrationSerializer, OTPVerificationSerializer, CustomTokenObtainPairSerializer, ProfileSerializer, DoctorProfileSerializer, AdminUserManagementSerializer, CategorySerializer
 
 
 """
@@ -332,8 +332,22 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
             description="Filter doctors by their medical specialization (e.g. 'Cardiology', 'Dermatology').",
             required=False,
         ),
+        OpenApiParameter(
+            name="category",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Filter doctors by category name (e.g. 'Cardiology').",
+            required=False,
+        ),
+        OpenApiParameter(
+            name="min_rating",
+            type=OpenApiTypes.NUMBER,
+            location=OpenApiParameter.QUERY,
+            description="Filter doctors with average rating greater than or equal to this value.",
+            required=False,
+        ),
     ],
-    description="Returns a list of all verified doctor profiles. Requires authentication. Results can be filtered by specialization.",
+    description="Returns a list of all verified doctor profiles. Requires authentication. Results can be filtered by specialization, category, and minimum rating.",
     summary="List verified doctors",
     tags=["Doctors"],
 )
@@ -342,7 +356,19 @@ class DoctorListView(generics.ListAPIView):
     serializer_class = DoctorProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['specialization']
+    filterset_class = DoctorFilter
+
+
+@extend_schema(
+    responses={200: CategorySerializer(many=True)},
+    description="Public endpoint returning all available doctor categories for dropdown/filter use in clients.",
+    summary="List doctor categories",
+    tags=["Categories"],
+)
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all().order_by('name')
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.AllowAny]
 
 
 @extend_schema_view(
@@ -367,6 +393,20 @@ class DoctorListView(generics.ListAPIView):
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY,
                 description="Filter doctors by specialization (applied via DoctorFilter).",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="category",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter doctors by category name (applied via DoctorFilter).",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="min_rating",
+                type=OpenApiTypes.NUMBER,
+                location=OpenApiParameter.QUERY,
+                description="Return doctors with average rating >= this value (applied via DoctorFilter).",
                 required=False,
             ),
         ],

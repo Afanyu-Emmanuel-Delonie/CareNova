@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User, Profile, DoctorProfile, PatientProfile
+from .models import User, Profile, DoctorProfile, PatientProfile, Category
 from appointments.serializers import AppointmentSerializer
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -48,6 +48,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField(read_only=True)
+    category_name = serializers.SerializerMethodField(read_only=True)
     average_rating = serializers.FloatField(read_only=True)
     total_appointments = serializers.SerializerMethodField()
     emergency_count = serializers.SerializerMethodField()
@@ -57,7 +58,7 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoctorProfile
         fields = [
-            'id', 'full_name', 'specialization', 'license_number', 'bio', 'is_verified',
+            'id', 'full_name', 'category', 'category_name', 'specialization', 'license_number', 'bio', 'is_verified',
             'average_rating', 'total_appointments', 'emergency_count', 'pending_count', 'appointments'
         ]
         read_only_fields = ['is_verified']
@@ -70,6 +71,9 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
 
     def get_total_appointments(self, obj):
         return obj.doctor_appointments.count()
+
+    def get_category_name(self, obj):
+        return obj.category.name if obj.category else None
 
     def get_emergency_count(self, obj):
         return obj.doctor_appointments.filter(is_emergency=True, status='PENDING').count()
@@ -137,3 +141,9 @@ class AdminUserManagementSerializer(serializers.ModelSerializer):
         if obj.role == User.Roles.PATIENT and hasattr(obj.profile, 'patient_data'):
             return {"blood_group": obj.profile.patient_data.blood_group}
         return None
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'icon']

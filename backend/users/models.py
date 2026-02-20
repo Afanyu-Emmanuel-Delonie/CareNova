@@ -84,9 +84,28 @@ class Profile(models.Model):
     
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
-    
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    icon = models.ImageField(upload_to='category_icons/', null=True, blank=True)
+
+    class Meta:
+        verbose_name_plural = "Categories"
+
+    def __str__(self):
+        return self.name
+
+
 class DoctorProfile(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE, related_name='doctor_data')
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='doctors',
+    )
     specialization = models.CharField(max_length=100)
     license_number = models.CharField(max_length=50, unique=True)
     bio = models.TextField(blank=True)

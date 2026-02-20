@@ -29,7 +29,7 @@ class CareNovaApp extends StatelessWidget {
     return MaterialApp(
       title: 'CareNova',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       home: const AuthGate(),
