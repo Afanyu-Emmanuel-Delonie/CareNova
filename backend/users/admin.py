@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Profile, DoctorProfile, PatientProfile
+from .models import User, Profile, DoctorProfile, PatientProfile, Category
 
 
 class ProfileInline(admin.StackedInline):
@@ -25,9 +25,9 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(DoctorProfile)
 class DoctorAdmin(admin.ModelAdmin):
     # obj.profile accesses the Profile model, which then accesses the User model email
-    list_display = ('get_name', 'get_email', 'specialization', 'is_verified')
-    list_filter = ('specialization', 'is_verified')
-    search_fields = ('profile__last_name', 'profile__user__email', 'specialization')
+    list_display = ('get_name', 'get_email', 'category', 'specialization', 'is_verified')
+    list_filter = ('category', 'specialization', 'is_verified')
+    search_fields = ('profile__last_name', 'profile__user__email', 'specialization', 'category__name')
     list_editable = ('is_verified',)
 
     @admin.display(description='Doctor Name')
@@ -37,6 +37,12 @@ class DoctorAdmin(admin.ModelAdmin):
     @admin.display(description='Email')
     def get_email(self, obj):
         return obj.profile.user.email
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
 
 @admin.register(PatientProfile)
 class PatientAdmin(admin.ModelAdmin):

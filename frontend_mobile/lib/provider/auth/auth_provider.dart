@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend_mobile/data/services/auth_service.dart';
 import 'package:dio/dio.dart';
 
+import '../../data/model/category_model.dart';
 import '../../data/model/user_profile.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -10,16 +11,20 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isAuthenticated = false;
   bool _isInitializing = true;
+  bool _isCategoriesLoading = false;
   String? _errorMessage;
   String? _email;
   UserProfile? _profile;
+  List<Category> _categories = [];
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
   bool get isInitializing => _isInitializing;
+  bool get isCategoriesLoading => _isCategoriesLoading;
   String? get errorMessage => _errorMessage;
   String? get email => _email;
   UserProfile? get profile => _profile;
+  List<Category> get categories => _categories;
 
   // ─── Startup ──────────────────────────────────────────────────────
   Future<void> checkLoginStatus() async {
@@ -27,6 +32,10 @@ class AuthProvider extends ChangeNotifier {
     if (hasToken) {
       _isAuthenticated = true;
       await fetchProfile();
+      final stillHasToken = await _authService.hasValidToken();
+      if (!stillHasToken) {
+        _isAuthenticated = false;
+      }
     }
     _isInitializing = false;
     notifyListeners();
@@ -160,6 +169,7 @@ class AuthProvider extends ChangeNotifier {
     _isAuthenticated = false;
     _profile = null;
     _email = null;
+    _categories = [];
     notifyListeners();
   }
 
@@ -215,6 +225,21 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       _errorMessage = 'Invalid or expired OTP. Please try again.';
       return false;
+    }
+  }
+
+  // ─── Categories ───────────────────────────────────────────────────
+  Future<void> fetchCategories() async {
+    _isCategoriesLoading = true;
+    notifyListeners();
+
+    try {
+      _categories = await _authService.getCategories();
+    } catch (e) {
+      debugPrint('fetchCategories error: $e');
+    } finally {
+      _isCategoriesLoading = false;
+      notifyListeners();
     }
   }
 

@@ -6,7 +6,7 @@ class AppColors {
   static const Color creamSecondary = Color(0xFFFDF5E6);
 
   // --- LIGHT MODE PALETTE ---
-  static const Color lightBackground = Colors.white;
+  static const Color lightBackground = Color(0xFFF5F7FA);
   static const Color lightSurface = Colors.white;
   static const Color lightTextPrimary = Color(0xFF1A0033);
   static const Color lightTextSecondary = Color(0xFF6B5B7B);
