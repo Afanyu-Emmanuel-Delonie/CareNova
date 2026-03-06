@@ -55,13 +55,12 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
     emergency_count = serializers.SerializerMethodField()
     pending_count = serializers.SerializerMethodField()
     appointments = AppointmentSerializer(many=True, read_only=True, source='doctor_appointments')
-    uuid = serializers.CharField(source='profile.user.id', read_only=True)
+    
 
     class Meta:
         model = DoctorProfile
         fields = [
-            'id', 'uuid', 'full_name', 'profile_picture', 'category', 'category_name',
-            'specialization', 'years_experience', 'license_number', 'bio', 'is_verified',
+            'id', 'full_name', 'profile_picture', 'category', 'category_name', 'specialization', 'license_number', 'bio', 'is_verified',
             'average_rating', 'total_appointments', 'emergency_count', 'pending_count', 'appointments'
         ]
         read_only_fields = ['is_verified']

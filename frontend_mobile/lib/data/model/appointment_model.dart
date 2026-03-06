@@ -11,6 +11,10 @@ class Appointment {
   final String? reason;
   final AppointmentStatus status;
   final String? doctorSpecialization;
+  final String? doctorBio;
+  final String? licenseNumber;
+  final String? doctorProfilePicture;
+  final bool doctorIsVerified;
 
   Appointment({
     required this.id,
@@ -25,12 +29,17 @@ class Appointment {
     required this.status,
     this.doctorName,
     this.doctorSpecialization,
+    this.doctorBio,
+    this.licenseNumber,
+    this.doctorProfilePicture,
+    this.doctorIsVerified = false,
   });
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
     return Appointment(
       id: json['id'] as int,
       doctorId: json['doctor_id'] as String,
+      licenseNumber: json['license_number'] as String?,
       patientName: json['patient_name'] as String? ?? '',
       patientBloodGroup: json['patient_blood_group'] as String?,
       patientPhone: json['patient_phone'] as String?,
@@ -46,6 +55,10 @@ class Appointment {
   Appointment withDoctor({
     required String name,
     required String specialization,
+    String? bio,
+    String? license,
+    String? profilePicture,
+    bool isVerified = false,
   }) {
     return Appointment(
       id: id,
@@ -60,6 +73,11 @@ class Appointment {
       status: status,
       doctorName: name,
       doctorSpecialization: specialization,
+      doctorBio: bio,
+      licenseNumber: license,
+      doctorProfilePicture: profilePicture,
+      doctorIsVerified: isVerified,
+
     );
   }
 

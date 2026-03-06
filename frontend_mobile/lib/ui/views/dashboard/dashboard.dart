@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:frontend_mobile/core/widgets/notification_bell.dart';
+import 'package:frontend_mobile/ui/views/appointments%20&%20doctors/doctors_profile.dart';
 import 'package:frontend_mobile/ui/views/dashboard/view_model/dashboard_viewmodel.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +17,7 @@ import '../../../provider/appointments/appointment_provider.dart';
 import '../../../provider/auth/auth_provider.dart';
 import '../../../provider/auth/doctor_provider.dart';
 import '../../../provider/news/news_provider.dart';
+import '../appointments & doctors/appoitment_details.dart';
 
 
 class DashboardScreen extends StatefulWidget {
@@ -62,11 +65,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final categories = authProvider.categories;
     final isCategoriesLoading = authProvider.isCategoriesLoading;
 
-    // Enriched appointments with doctor info
+    // Enriched appointments & doctors with doctor info
     final enrichedAppointments = DashboardViewModel.enrichAppointments(
       appointmentProvider.upcomingAppointments,
       doctorProvider.doctors,
-    );
+    ).where((a) => a.status == AppointmentStatus.confirmed).toList();
+
 
     return Scaffold(
       backgroundColor:
@@ -84,7 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 20),
 
               // ─── Appointments (patients only) ─────────────────
-              if (isPatient) ...[
+              if (isPatient && enrichedAppointments.isNotEmpty) ...[
                 _buildSectionHeader(
                   isDarkMode,
                   title: 'Upcoming Appointments',
@@ -221,7 +225,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        _buildNotificationBell(isDarkMode),
+        NotificationBell()
       ],
     );
   }
@@ -577,44 +581,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ─────────────────────────────────────────────────────────
-  // Notification Bell
-  // ─────────────────────────────────────────────────────────
-
-  Widget _buildNotificationBell(bool isDarkMode) {
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isDarkMode
-                ? Colors.white10
-                : Colors.black.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.notifications_none_rounded,
-            color: isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.darkBackground,
-          ),
-        ),
-        Positioned(
-          right: 10,
-          top: 10,
-          child: Container(
-            height: 8,
-            width: 8,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFE0000),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────
   // Doctors Section
   // ─────────────────────────────────────────────────────────
 
@@ -662,7 +628,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final topDoctors = provider.doctors.take(6).toList();
 
     return SizedBox(
-      height: 255,
+      height: 230,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: topDoctors.length,
@@ -675,7 +641,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               child: DoctorCard(
                 doctor: topDoctors[index],
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DoctorsProfile(doctor: topDoctors[index],),
+                    ));
+                },
               ),
             ),
           );
@@ -709,7 +681,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         child: Center(
           child: Text(
-            'No upcoming appointments',
+            'No upcoming appointments & doctors',
             style: GoogleFonts.inter(
               color: isDarkMode
                   ? AppColors.darkTextSecondary
@@ -728,208 +700,254 @@ class _DashboardScreenState extends State<DashboardScreen> {
         itemBuilder: (context, index) {
           final appointment = enrichedAppointments[index];
 
-          return Container(
-            width: MediaQuery.of(context).size.width * 0.80,
-            margin: EdgeInsets.only(
-              right: index == enrichedAppointments.length - 1 ? 0 : 16,
-            ),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDarkMode
-                    ? [const Color(0xFF6C3FC5), const Color(0xFF9B6FE0)]
-                    : [const Color(0xFF7909CC), const Color(0xFF9B3FE8)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AppointmentDetails(appointment: appointment),
+                ),
+              );
+            },
+            child: Container(
+              width: enrichedAppointments.length == 1
+              ? MediaQuery.of(context).size.width - 40
+              : MediaQuery.of(context).size.width * 0.8,
+              margin: EdgeInsets.only(
+                right: index == enrichedAppointments.length - 1 ? 0 : 16,
               ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF7909CC).withOpacity(0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDarkMode
+                      ? [const Color(0xFF6C3FC5), const Color(0xFF9B6FE0)]
+                      : [const Color(0xFF7909CC), const Color(0xFF9B3FE8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Label + Status ──
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Upcoming Appointment',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withOpacity(0.75),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        appointment.status.label,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7909CC).withOpacity(0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Label + Status ──
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Upcoming Appointment',
                         style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white.withOpacity(0.75),
+                          letterSpacing: 0.5,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-
-                // ── Doctor info ──
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 26,
-                      backgroundImage: AssetImage(
-                          'assets/app_images/profile_avatar.png'),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            appointment.doctorName ?? 'Doctor',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            appointment.doctorSpecialization ??
-                                appointment.reason ??
-                                'No details provided',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.white.withOpacity(0.75),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (appointment.isEmergency)
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.3),
-                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(
-                          Icons.emergency_rounded,
-                          color: Colors.white,
-                          size: 20,
+                        child: Text(
+                          appointment.status.label,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                  ],
-                ),
+                    ],
+                  ),
 
-                const SizedBox(height: 20),
-                Divider(color: Colors.white.withOpacity(0.2), height: 1),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
-                // ── Date + Time ──
-                Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
+                  // ── Doctor info ──
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 26,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        child: ClipOval(
+                          child: appointment.doctorProfilePicture != null &&
+                              appointment.doctorProfilePicture!.isNotEmpty
+                              ? Image.network(
+                            appointment.doctorProfilePicture!,
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Image.asset(
+                              'assets/app_images/profile_avatar.png',
+                              width: 52,
+                              height: 52,
+                              fit: BoxFit.cover,
                             ),
-                            child: const Icon(Icons.calendar_today_rounded,
-                                color: Colors.white, size: 16),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Date',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: Colors.white.withOpacity(0.6),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const SizedBox(
+                                width: 52,
+                                height: 52,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                appointment.formattedDate,
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
+                              );
+                            },
+                          )
+                              : Image.asset(
+                            'assets/app_images/profile_avatar.png',
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                    Container(
-                        height: 36,
-                        width: 1,
-                        color: Colors.white.withOpacity(0.2)),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              appointment.doctorName ?? 'Doctor',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            child: const Icon(Icons.access_time_rounded,
-                                color: Colors.white, size: 16),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Time',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: Colors.white.withOpacity(0.6),
-                                ),
+                            const SizedBox(height: 3),
+                            Text(
+                              appointment.doctorSpecialization ??
+                                  appointment.reason ??
+                                  'No details provided',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.white.withOpacity(0.75),
                               ),
-                              Text(
-                                appointment.formattedTime,
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      if (appointment.isEmergency)
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.emergency_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+                  Divider(color: Colors.white.withOpacity(0.2), height: 1),
+                  const SizedBox(height: 16),
+
+                  // ── Date + Time ──
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.calendar_today_rounded,
+                                  color: Colors.white, size: 16),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Date',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: Colors.white.withOpacity(0.6),
+                                  ),
+                                ),
+                                Text(
+                                  appointment.formattedDate,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                          height: 36,
+                          width: 1,
+                          color: Colors.white.withOpacity(0.2)),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.access_time_rounded,
+                                  color: Colors.white, size: 16),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Time',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: Colors.white.withOpacity(0.6),
+                                  ),
+                                ),
+                                Text(
+                                  appointment.formattedTime,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
         },

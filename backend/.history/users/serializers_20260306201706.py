@@ -60,8 +60,7 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoctorProfile
         fields = [
-            'id', 'uuid', 'full_name', 'profile_picture', 'category', 'category_name',
-            'specialization', 'years_experience', 'license_number', 'bio', 'is_verified',
+            'id',  'full_name', 'profile_picture', 'category', 'category_name', 'specialization', 'license_number', 'bio', 'is_verified',
             'average_rating', 'total_appointments', 'emergency_count', 'pending_count', 'appointments'
         ]
         read_only_fields = ['is_verified']

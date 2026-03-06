@@ -4,5 +4,3 @@ Redis — docker run -d -p 6379:6379 redis:alpine
 Celery — celery -A core worker --loglevel=info -Q emails --pool=solo
 Django — python manage.py runserver 0.0.0.0:8001
 
-New setuo run 
-docker compose up --build

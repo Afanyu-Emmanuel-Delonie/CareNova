@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import timedelta
+from celery.schedules import crontab
 import environ
 import os
 
@@ -91,10 +92,10 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': env.db(
+        'DATABASE_URL',
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+    )
 }
 
 
@@ -155,14 +156,20 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Celery Settings
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://127.0.0.1:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '172.19.176.1', '*'] 
+CELERY_BEAT_SCHEDULE = {
+    'cleanup_old_appointments': {
+        'task': 'appointments.tasks.cleanup_old_appointments',
+        'schedule': crontab(hour=3, minute=0),
+    },
+}
+
 CORS_ALLOW_ALL_ORIGINS = True 
 
 # User-uploaded media files

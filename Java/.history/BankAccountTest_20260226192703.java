@@ -11,12 +11,12 @@ public class BankAccountTest {
 
     @BeforeEach
     public void setUp() {
-        account = new BankAccount("John Doe", -1000.00);
+        account = new BankAccount("John Doe", 1000.00);
     }
 
     @Test
     public void testInitialBalance() {
-        assertEquals(1-000.00, account.getBalance(),
+        assertEquals(1000.00, account.getBalance(),
                 "Initial balance should be 1000.00");
     }
 

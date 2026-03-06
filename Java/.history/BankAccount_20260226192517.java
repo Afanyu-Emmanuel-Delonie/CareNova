@@ -6,9 +6,9 @@ public class BankAccount {
     // Constructor
     public BankAccount(String accountHolder, double initialBalance) {
         this.accountHolder = accountHolder;
-        // if (initialBalance < 0) {
-        //     throw new IllegalArgumentException("Initial balance cannot be negative");
-        // }
+        if (initialBalance < 0) {
+            throw new IllegalArgumentException("Initial balance cannot be negative");
+        }
         this.balance = initialBalance;
     }
 
@@ -42,7 +42,7 @@ public class BankAccount {
     }
 
     public static void main(String[] args) {
-        BankAccount account = new BankAccount("Alice", 1000.0);
+        BankAccount account = new BankAccount("Alice", 50.0);
 
         account.deposit(250.0);
         account.withdraw(100.0);

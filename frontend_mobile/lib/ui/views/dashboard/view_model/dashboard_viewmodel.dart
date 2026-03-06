@@ -9,17 +9,25 @@ class DashboardViewModel {
     return appointments.map((appointment) {
       try {
         final matched = doctors.firstWhere(
-              (d) => d.uuid == appointment.doctorId, // UUID to UUID match
+              (d) => d.uuid == appointment.doctorId,
         );
+
         return appointment.withDoctor(
           name: matched.fullName,
           specialization: matched.specialization.isNotEmpty
               ? matched.specialization
               : matched.categoryName,
+          bio: matched.bio,
+          license: matched.licenseNumber,
+          profilePicture: matched.profilePicture,
+          isVerified: matched.isVerified,
+
         );
       } catch (_) {
         return appointment;
       }
+
+
     }).toList();
   }
 
@@ -27,3 +35,4 @@ class DashboardViewModel {
     return role?.toLowerCase() == 'patient';
   }
 }
+

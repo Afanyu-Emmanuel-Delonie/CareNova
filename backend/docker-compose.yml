@@ -1,15 +1,6 @@
 services:
-  db:
-    image: postgres:15
-    environment:
-      - POSTGRES_DB=carenova
-      - POSTGRES_USER=afany
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   redis:
-    image: redis:7
+    image: redis:7-alpine
 
   web:
     build: .
@@ -17,12 +8,15 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8000:8000"
+      - "8001:8000"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgres://postgres:UBa22S0391:5432/carenova
-      - CELERY_BROKER_URL=redis://redis:6379/0
+      DATABASE_URL: sqlite:////app/db.sqlite3
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,10.0.2.2
     depends_on:
-      - db
       - redis
 
   worker:
@@ -30,9 +24,25 @@ services:
     command: celery -A core worker --loglevel=info -P eventlet
     volumes:
       - .:/app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: sqlite:////app/db.sqlite3
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
     depends_on:
       - redis
-      - db
 
-volumes:
-  postgres_data:
+  beat:
+    build: .
+    command: celery -A core beat --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: sqlite:////app/db.sqlite3
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      - redis

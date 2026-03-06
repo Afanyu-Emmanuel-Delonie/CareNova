@@ -25,7 +25,7 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(DoctorProfile)
 class DoctorAdmin(admin.ModelAdmin):
     # obj.profile accesses the Profile model, which then accesses the User model email
-    list_display = ('get_name', 'get_email', 'category', 'specialization', 'is_verified')
+    list_display = ('get_name', 'get_email', 'category', 'specialization', 'years_experience', 'is_verified')
     list_filter = ('category', 'specialization', 'is_verified')
     search_fields = ('profile__last_name', 'profile__user__email', 'specialization', 'category__name')
     list_editable = ('is_verified',)

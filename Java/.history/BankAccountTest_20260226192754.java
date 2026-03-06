@@ -16,7 +16,7 @@ public class BankAccountTest {
 
     @Test
     public void testInitialBalance() {
-        assertEquals(1-000.00, account.getBalance(),
+        assertEquals(1000.00, account.getBalance(),
                 "Initial balance should be 1000.00");
     }
 

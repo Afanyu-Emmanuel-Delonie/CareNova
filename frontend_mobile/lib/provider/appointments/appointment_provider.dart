@@ -41,16 +41,55 @@ class AppointmentProvider extends ChangeNotifier {
 
     try {
       final data = await _repo.fetchAppointments(page: _currentPage);
-      final newAppointments = data['appointments'] as List<Appointment>;
+      final newAppointments = data['appointments & doctors'] as List<Appointment>;
       _appointments.addAll(newAppointments);
       _hasMore = data['nextPage'] != null;
       if (_hasMore) _currentPage++;
       _error = null;
     } catch (e) {
-      _error = 'Failed to load appointments. Please try again.';
+      _error = 'Failed to load appointments & doctors. Please try again.';
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<bool> cancelAppointment(int appointmentId, {String? reason}) async {
+    try {
+      await _repo.cancelAppointment(
+        appointmentId: appointmentId,
+        reason: reason,
+      );
+      // update local state immediately
+      _appointments = _appointments.map((a) {
+        if (a.id == appointmentId) {
+          return Appointment(
+            id: a.id,
+            doctorId: a.doctorId,
+            patientName: a.patientName,
+            patientBloodGroup: a.patientBloodGroup,
+            patientPhone: a.patientPhone,
+            appointmentDate: a.appointmentDate,
+            appointmentTime: a.appointmentTime,
+            isEmergency: a.isEmergency,
+            reason: a.reason,
+            status: AppointmentStatus.cancelled,
+            doctorName: a.doctorName,
+            doctorSpecialization: a.doctorSpecialization,
+            doctorBio: a.doctorBio,
+            licenseNumber: a.licenseNumber,
+            doctorProfilePicture: a.doctorProfilePicture,
+            doctorIsVerified: a.doctorIsVerified,
+          );
+        }
+        return a;
+      }).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Failed to cancel appointment.';
+      notifyListeners();
+      return false;
     }
   }
 }

@@ -13,13 +13,13 @@ class AppointmentRepository {
 
       if (response.statusCode != 200) {
         throw Exception(
-            'Failed to fetch appointments. Status: ${response.statusCode}');
+            'Failed to fetch appointments & doctors. Status: ${response.statusCode}');
       }
 
       final data = response.data as Map<String, dynamic>;
 
       return {
-        'appointments': (data['results'] as List<dynamic>)
+        'appointments & doctors': (data['results'] as List<dynamic>)
             .map((a) => Appointment.fromJson(a as Map<String, dynamic>))
             .toList(),
         'nextPage': data['next'] != null ? page + 1 : null,
@@ -28,5 +28,25 @@ class AppointmentRepository {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<void> cancelAppointment({
+    required int appointmentId,
+    String? reason,
+  }) async {
+    try{
+      final response = await _apiClient.post(
+        '/appointments/appointment/$appointmentId/patient-cancel/',
+        {'cancellation_reason': reason ?? ''},
+      );
+
+      if ( response.statusCode != 200 ) {
+        throw Exception(
+            'Failed to cancel appointment. Status: ${response.statusCode}'
+        );
+    }
+  } catch (e) {
+    rethrow;
+  }
   }
 }

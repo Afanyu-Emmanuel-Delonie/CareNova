@@ -107,6 +107,7 @@ class DoctorProfile(models.Model):
         related_name='doctors',
     )
     specialization = models.CharField(max_length=100)
+    years_experience = models.PositiveSmallIntegerField(default=0)
     license_number = models.CharField(max_length=50, unique=True)
     bio = models.TextField(blank=True)
     is_verified = models.BooleanField(default=False)
