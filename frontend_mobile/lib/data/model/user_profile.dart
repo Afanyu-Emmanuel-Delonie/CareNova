@@ -7,6 +7,7 @@ class UserProfile {
   final String address;
   final String? profilePicture;
   final PatientData? patientData;
+  final DoctorData? doctorData;
 
   UserProfile({
     required this.email,
@@ -17,6 +18,7 @@ class UserProfile {
     required this.address,
     this.profilePicture,
     this.patientData,
+    this.doctorData,
   });
 
   String get fullName => '$firstName $lastName'.trim();
@@ -59,3 +61,33 @@ class PatientData {
     );
   }
 }
+
+class DoctorData {
+  final int? categoryId;
+  final String categoryName;
+  final String specialization;
+  final String? licenseNumber;
+  final String? bio;
+  final bool isVerified;
+
+  DoctorData({
+    this.categoryId,
+    required this.categoryName,
+    required this.specialization,
+    this.licenseNumber,
+    this.bio,
+    required this.isVerified,
+  });
+
+  factory DoctorData.fromJson(Map<String, dynamic> json) {
+    return DoctorData(
+      categoryId: json['category'] as int?,
+      categoryName: json['category_name'] as String? ?? 'General',
+      specialization: json['specialization'] as String? ?? '',
+      licenseNumber: json['license_number'] as String?,
+      bio: json['bio'] as String?,
+      isVerified: json['is_verified'] as bool? ?? false,
+    );
+  }
+}
+

@@ -24,7 +24,6 @@ class ApiClient {
       ),
     );
 
-    // Attach access token to every request
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -35,26 +34,27 @@ class ApiClient {
           return handler.next(options);
         },
         onResponse: (response, handler) async {
-          // If token expired, refresh and retry once
           if (response.statusCode == 401) {
             final data = response.data;
             if (data is Map && data['code'] == 'token_not_valid') {
               final refreshed = await _refreshToken();
               if (refreshed) {
-                // Retry the original request with the new token
                 final newToken = await _storage.read(key: 'access_token');
-                response.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-
+                response.requestOptions.headers['Authorization'] =
+                'Bearer $newToken';
                 final retryResponse = await dio.fetch(response.requestOptions);
                 return handler.resolve(retryResponse);
               } else {
-                // Refresh failed — clear tokens so AuthGate sends user to login
                 await _storage.delete(key: 'access_token');
                 await _storage.delete(key: 'refresh_token');
               }
             }
           }
           return handler.next(response);
+        },
+        onError: (error, handler) async {
+          debugPrint('API Error: ${error.message}');
+          return handler.next(error);
         },
       ),
     );
@@ -74,7 +74,6 @@ class ApiClient {
       final refreshToken = await _storage.read(key: 'refresh_token');
       if (refreshToken == null) return false;
 
-      // Use a plain Dio instance (no interceptors) to avoid infinite loop
       final refreshDio = Dio(
         BaseOptions(
           baseUrl: dotenv.env['BASE_URL'] ?? 'http://localhost:8000/api/v1/',
@@ -105,6 +104,20 @@ class ApiClient {
     }
   }
 
-  Future<Response> get(String path) => dio.get(path);
-  Future<Response> post(String path, dynamic data) => dio.post(path, data: data);
+  Future<Response> get(
+      String path, {
+        Map<String, dynamic>? queryParameters,
+      }) =>
+      dio.get(path, queryParameters: queryParameters);
+
+  Future<Response> post(String path, dynamic data) =>
+      dio.post(path, data: data);
+
+  Future<Response> put(String path, dynamic data) =>
+      dio.put(path, data: data);
+
+  Future<Response> patch(String path, dynamic data) =>
+      dio.patch(path, data: data);
+
+  Future<Response> delete(String path) => dio.delete(path);
 }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend_mobile/core/theme/app_theme.dart';
+import 'package:frontend_mobile/provider/appointments/appointment_provider.dart';
 import 'package:frontend_mobile/provider/auth/auth_provider.dart';
+import 'package:frontend_mobile/provider/auth/doctor_provider.dart';
+import 'package:frontend_mobile/provider/news/news_provider.dart';
 import 'package:frontend_mobile/ui/views/auth/auth_gate.dart';
 import 'package:provider/provider.dart';
 
@@ -15,6 +18,11 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..checkLoginStatus(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => DoctorProvider()..loadDoctors(),
+        ),
+        ChangeNotifierProvider(create: (_) => AppointmentProvider()),
+        ChangeNotifierProvider(create: (_) => NewsProvider()),
       ],
       child: const CareNovaApp(),
     ),
@@ -29,7 +37,7 @@ class CareNovaApp extends StatelessWidget {
     return MaterialApp(
       title: 'CareNova',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       home: const AuthGate(),

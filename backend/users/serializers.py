@@ -48,17 +48,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField(read_only=True)
+    profile_picture = serializers.SerializerMethodField()
     category_name = serializers.SerializerMethodField(read_only=True)
     average_rating = serializers.FloatField(read_only=True)
     total_appointments = serializers.SerializerMethodField()
     emergency_count = serializers.SerializerMethodField()
     pending_count = serializers.SerializerMethodField()
     appointments = AppointmentSerializer(many=True, read_only=True, source='doctor_appointments')
+    uuid = serializers.CharField(source='profile.user.id', read_only=True)
 
     class Meta:
         model = DoctorProfile
         fields = [
-            'id', 'full_name', 'category', 'category_name', 'specialization', 'license_number', 'bio', 'is_verified',
+            'id', 'uuid', 'full_name', 'profile_picture', 'category', 'category_name',
+            'specialization', 'years_experience', 'license_number', 'bio', 'is_verified',
             'average_rating', 'total_appointments', 'emergency_count', 'pending_count', 'appointments'
         ]
         read_only_fields = ['is_verified']
@@ -80,6 +83,13 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
 
     def get_pending_count(self, obj):
         return obj.doctor_appointments.filter(status='PENDING').count()
+    
+    def get_profile_picture(self, obj):
+        request = self.context.get('request')
+        profile = getattr(obj, 'profile', None)
+        if not profile or not profile.profile_picture:
+            return None
+        return request.build_absolute_uri(profile.profile_picture.url) if request else profile.profile_picture.url
         
 class PatientProfileSerializer(serializers.ModelSerializer):
     class Meta:
